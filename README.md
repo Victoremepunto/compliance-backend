@@ -160,9 +160,24 @@ You may also need to set up basic auth in
 [settings](config/settings/development.yml), option `platform_basic_auth`
 (see Development notes).
 
-Either podman-compose or docker-compose should work. podman-compose does not
-support exec, so podman commands must be run manually against the running
-container, as demonstrated:
+Either podman-compose or docker-compose should work.
+
+Some images are being pulled from [Quay Cloudservices repository](https://quay.io/cloudservices)
+so be sure to have logged in first before attempting to run any docker-compose
+commands that require to pull an image from Quay:
+
+```
+# Podman
+podman login quay.io/cloudservices
+
+# Docker
+docker login quay.io/cloudservices
+```
+
+You can get your CLI password securely from Quay's personal profile settings page.
+
+podman-compose does not support exec, so podman commands must be run manually
+against the running container, as demonstrated:
 
 ```shell
 # docker
