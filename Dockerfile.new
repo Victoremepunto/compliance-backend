@@ -1,0 +1,32 @@
+FROM ubi8/ruby-26 AS builder
+
+ARG RAILS_ROOT=/app
+ARG BUILD_PACKAGES="build-base curl-dev git"
+ARG DEV_PACKAGES="qt5-default libqt5webkit5-dev"
+ARG RUBY_PACKAGES=""
+ARG PACKAGES="qt5-default libqt5webkit5-dev gst-plugins-base \
+ gstreamer1.0-tools gstreamer1.0-x libopenscap-dev postgresql-client"
+
+RUN yum -y update && yum install -y $PACKAGES && yum clean all
+
+RUN adduser -D compliance-user
+
+USER compliance-user
+
+WORKDIR $RAILS_ROOT
+
+#COPY vendor Gemfile* entrypoint ./
+COPY --chown=compliance-user vendor ./vendor
+COPY --chown=compliance-user Gemfile Gemfile.lock ./
+
+RUN bunde -j4
+
+FROM ubi8/ruby-26
+
+ARG RAILS_ROOT=/app
+WORKDIR /app
+
+COPY --chown=compliance-user --from=builder $RAILS_ROOT ./
+
+ENTRYPOINT ["/app/entrypoint.sh"]
+CMD ["bundle", "exec", "rails", "s", "-b", "0.0.0.0"]
