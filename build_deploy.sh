@@ -1,6 +1,21 @@
 #!/bin/bash
 
-set -exv
+#set -exv
+
+BACKWARDS_COMPATIBILITY="${BACKWARDS_COMPATIBILITY:-enabled}"
+#IMAGE_NAME="quay.io/cloudservices/compliance-backend"
+IMAGE_REGISTRY=""
+IMAGE_NAME=""
+WORKDIR="$PWD"
+DOCKER_CONF="${WORKDIR}/.docker"
+DOCKERFILE="${WORKDIR}/Dockerfile"
+CONTAINER_ENGINE_CMD=''
+LOCAL_RUN="${LOCAL_RUN:-false}"
+
+get_7_chars_commit_hash() {
+    local TMP=$(git rev-parse --short=7 HEAD)
+    echo "${TMP}-new"
+}
 
 _check_command_is_present() {
     command -v $1
@@ -20,6 +35,18 @@ check_required_registry_credentials() {
     if [[ -z "$QUAY_USER" || -z "$QUAY_TOKEN" || -z "$RH_REGISTRY_USER" || -z "$RH_REGISTRY_TOKEN" ]]; then
         echo "QUAY_USER, QUAY_TOKEN, RH_REGISTRY_USER and RH_REGISTRY_TOKEN must be set"
         exit 1
+    fi
+}
+
+container_engine_cmd() {
+
+    if _check_command_is_present podman; then
+        podman "$@"
+    else
+        if ! [ -d "$DOCKER_CONF" ]; then
+            mkdir -p "$DOCKER_CONF"
+        fi
+        docker --config=${DOCKER_CONF} "$@"
     fi
 }
 
@@ -60,18 +87,16 @@ tag_and_push_for_backwards_compatibility() {
     done
 }
 
-IMAGE_NAME="quay.io/cloudservices/compliance-backend"
-IMAGE_TAG="$(git rev-parse --short=7 HEAD)-new"
-WORKDIR="$PWD"
-DOCKER_CONF="${WORKDIR}/.docker"
-DOCKERFILE="${WORKDIR}/Dockerfile"
-CONTAINER_ENGINE_CMD=''
-
-check_required_registry_credentials && initialize_container_engine_cmd
-login_container_registry "$QUAY_USER" "$QUAY_TOKEN" 'quay.io'
-login_container_registry "$RH_REGISTRY_USER" "$RH_REGISTRY_TOKEN" 'registry.redhat.io'
-build_image
-push_image "$IMAGE_TAG"
-
-# To enable backwards compatibility with ci, qa, and smoke, always push latest and qa tags
-tag_and_push_for_backwards_compatibility
+# Requires to be in a cloned git repo. directory
+#IMAGE_TAG=$(get_7_chars_commit_hash)
+#
+#check_required_registry_credentials && initialize_container_engine_cmd
+#login_container_registry "$QUAY_USER" "$QUAY_TOKEN" 'quay.io'
+#login_container_registry "$RH_REGISTRY_USER" "$RH_REGISTRY_TOKEN" 'registry.redhat.io'
+#build_image
+#push_image "$IMAGE_TAG"
+#
+## To enable backwards compatibility with ci, qa, and smoke, always push latest and qa tags
+#if [ "$BACKWARDS_COMPATIBILITY" == "enabled" ]; then
+#    tag_and_push_for_backwards_compatibility
+#fi
