@@ -253,6 +253,8 @@ Example:
 LOCAL_BUILD=true RH_REGISTRY_USER=guybrush RH_REGISTRY_TOKEN=monkey QUAY_USER=lechuck QUAY_TOKEN=Ela1ne ./build_deploy.sh
 ```
 
+some change
+
 ## Development notes
 
 ### Running Sonarqube
